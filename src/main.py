@@ -54,12 +54,16 @@ user32.TranslateMessage.argtypes = (LPMSG,)
 ########################################
 # Used WinAPI constants
 ########################################
-WS_OVERLAPPEDWINDOW = 13565952
-CW_USEDEFAULT = -2147483648
-IDC_ARROW = 32512
+#WS_OVERLAPPED = 0
 BLACK_BRUSH = 4
+CW_USEDEFAULT = -2147483648
+GWL_STYLE = -16
+IDC_ARROW = 32512
+SW_SHOWMAXIMIZED = 3
+SW_SHOWNORMAL = 1
 WM_CLOSE = 16
 WM_SIZE = 5
+WS_OVERLAPPEDWINDOW = 13565952
 
 ########################################
 # App settings
@@ -75,6 +79,7 @@ try:
 except:
     APP_SETTINGS = {}
 
+# Settings that can be overwritten by a JSON file called 'settings.json' in the 'data' folder
 VIDSRC_HOST = APP_SETTINGS.get('VIDSRC_HOST', 'vidsrc.sh')
 USER_AGENT = APP_SETTINGS.get('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0')
 DARK_MODE = APP_SETTINGS.get('DARK_MODE', True)
@@ -85,8 +90,7 @@ DARK_MODE = APP_SETTINGS.get('DARK_MODE', True)
 SETTINGS.USER_AGENT = USER_AGENT
 SETTINGS.BROWSER_EXTENSIONS_ENABLED = True
 if IS_FROZEN:
-    SETTINGS.USER_DATA_FOLDER = os.path.join(APP_DIR, '..', 'profile')  # Use a local profile folder
-#SETTINGS.ADDITIONAL_BROWSER_ARGUMENTS = '--disable-web-security'
+    SETTINGS.USER_DATA_FOLDER = os.path.join(APP_DIR, '..', 'profile')
 
 ########################################
 #
@@ -229,6 +233,35 @@ def main():
             def on_frame_dom_content_loaded(sender):
                 # This button must be clicked, otherwise the actual video stream is not loaded.
                 sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
+
+                # Make the fullscreen button (and fullscreen by double-click) work
+                if play:
+                    class ctx:
+                        fullscreen = False
+
+                    ########################################
+                    #
+                    ########################################
+                    def toggle_fullscreen():
+                        ctx.fullscreen = not ctx.fullscreen
+                        style = user32.GetWindowLongA(hwnd, GWL_STYLE)
+                        user32.SetWindowLongA(hwnd, GWL_STYLE, style & ~13565952 if ctx.fullscreen else style | 13565952)
+                        user32.ShowWindow(hwnd, SW_SHOWMAXIMIZED if ctx.fullscreen else SW_SHOWNORMAL)
+
+                    sender.expose('toggle_fullscreen', toggle_fullscreen)
+
+                    sender.execute_js(
+"""const video = document.querySelector('video');
+if (video)
+{
+    document.addEventListener("dblclick", (e) => {
+        chrome.webview.api.toggle_fullscreen();
+    });
+    video.parentNode.requestFullscreen = () => {
+        chrome.webview.api.toggle_fullscreen();
+    }
+}"""
+                    )
 
             webview.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
             webview.connect(EVENT.FRAME_CREATED, on_frame_created)
