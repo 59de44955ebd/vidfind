@@ -57,11 +57,10 @@ Result:
 
 #### Query movies in the IMDb database:
 ```
-vidfind --query "metropolis"
+vidfind --query "blade runner"
 
-tt0017136       "Metropolis"            1927
-tt0293416       "Metropolis"            2001
-tt42497796      "Metropolis Beyond"     2026
+tt0083658       "Blade Runner"          1982
+tt1856101       "Blade Runner 2049"     2017
 ```
 
 ## Notes
