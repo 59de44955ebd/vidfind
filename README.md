@@ -1,6 +1,6 @@
 # vidfind
 
-vidfind is a command line tool for Windows 11 that allows to find (and optionally play) online movies via their [IMDb](https://en.wikipedia.org/wiki/IMDb)-ID.
+vidfind is a command line tool for Windows 11 that allows to find and play online movies via their [IMDb](https://en.wikipedia.org/wiki/IMDb)-ID.
 
 It is based on [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2) and the `vidsrc` API and written in Python.
 
