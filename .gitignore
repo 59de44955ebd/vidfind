@@ -1,0 +1,6 @@
+/build/
+/dist/
+/releases/
+/stuff/
+_backup.rar
+/*.spec

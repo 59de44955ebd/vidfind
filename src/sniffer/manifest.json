@@ -1,0 +1,20 @@
+{
+  "name": "Sniffer",
+  "description": "Sniffer",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "webRequest",
+    "<all_urls>"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "main.js",
+    "type": "module"
+  }
+}
