@@ -114,7 +114,6 @@ def main():
             usage()
         is_query = True
         query = sys.argv[2]
-
     else:
         imdb_id = sys.argv[1]
         if not sys.argv[1].startswith('tt'):
@@ -192,7 +191,7 @@ def main():
                     except:
                         pass
                 webview.close()
-                user32.PostQuitMessage(3)
+                user32.PostQuitMessage(0)
                 return
 
             if err != 0 or int(data['status_code']) != 200:
