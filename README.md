@@ -41,8 +41,8 @@ for /f %u in ('vidfind tt0083658') do @set "U=%u" && "C:\Program Files\VideoLAN\
 for /f %u in ('vidfind tt0083658') do @set "U=%u" && D:\_portable\mpv\mpv.exe "%U%"
 ```
 
-#### Save found URL in temporary .m3u playlist, then open it with the default player for .m3u files: 
-This is the only way to automatically play the found video in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)). You first have to associate .m3u files with it in the system settings.
+#### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
+*As far as I can tell this the only way to automatically play the found streaming URL in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)), but this will only work if you previously associated .m3u files with it in the system settings.*
 ```cmd
 vidfind tt0083658 > "%TMP%\tmp.m3u" && explorer "%TMP%\tmp.m3u"
 ```
