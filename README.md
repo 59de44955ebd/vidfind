@@ -35,10 +35,10 @@ vidfind tt0083658 | "C:\Program Files\VideoLAN\VLC\vlc.exe" -
 vidfind tt0083658 | D:\_portable\mpv\mpv.exe --playlist=-
 ```
 
-#### Alternative that also works for players that don't accept filenames/URLs passed from `STDIN`:
-```cmd
-for /f %u in ('vidfind tt0083658') do @set "U=%u" && "C:\Program Files\VideoLAN\VLC\vlc.exe" "%U%"
-for /f %u in ('vidfind tt0083658') do @set "U=%u" && D:\_portable\mpv\mpv.exe "%U%"
+#### Find a movie and play it directly with [MPC-HC](https://github.com/clsid2/mpc-hc):
+*This method also works for other media players that don't accept filenames/URLs passed directly from `STDIN`*
+```
+for /f %u in ('vidfind tt0083658') do @set "U=%u" && "C:\Program Files\MPC-HC\mpc-hc64.exe" "%U%"
 ```
 
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
