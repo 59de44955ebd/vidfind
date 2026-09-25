@@ -38,7 +38,7 @@ vidfind tt0083658 | D:\_portable\mpv\mpv.exe --playlist=-
 #### Find a movie and play it directly with [MPC-HC](https://github.com/clsid2/mpc-hc):
 *This method also works for other media players that don't accept filenames/URLs passed directly from `STDIN`*
 ```
-for /f %u in ('vidfind tt0083658') do @set "U=%u" && "C:\Program Files\MPC-HC\mpc-hc64.exe" "%U%"
+for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "C:\Program Files\MPC-HC\mpc-hc64.exe" "%U%"
 ```
 
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
@@ -62,7 +62,7 @@ vidfind tt0083658 | yt-dlp -o tt0083658.mp4 -a -
 
 #### Find a movie and download it with [JDownloader](https://jdownloader.org/home/index):
 ```
-for /f %u in ('vidfind tt0083658') do @set "U=%u" && "%LOCALAPPDATA%\JDownloader 2\JDownloader2.exe" "%U%"
+for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "%LOCALAPPDATA%\JDownloader 2\JDownloader2.exe" "%U%"
 ```
 
 #### Query movies in the IMDb database:
