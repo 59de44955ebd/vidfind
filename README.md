@@ -48,12 +48,22 @@ vidfind tt0083658 > "%TMP%\tmp.m3u" && explorer "%TMP%\tmp.m3u"
 ```
 
 #### Play a movie directly with vidfind:
-```cmd
+```
 vidfind tt0083658 --play
 ```
 
 Result:
 ![](screenshots/play.png)
+
+#### Find a movie and download it with [yt-dlp](https://github.com/yt-dlp/yt-dlp) as .mp4 file:
+```
+vidfind tt0083658 | yt-dlp -o tt0083658.mp4 -a -
+```
+
+#### Find a movie and download it with [JDownloader](https://jdownloader.org/home/index):
+```
+for /f %u in ('vidfind tt0083658') do @set "U=%u" && "%LOCALAPPDATA%\JDownloader 2\JDownloader2.exe" "%U%"
+```
 
 #### Query movies in the IMDb database:
 ```
