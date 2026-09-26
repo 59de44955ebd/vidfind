@@ -10,23 +10,31 @@ It is based on [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/m
 Usage:
 
 vidfind imdb-id [--play]
+vidfind "some movie title" [--play]
 vidfind --query "some movie title"
 ```
-By default the tool just prints the HLS master URL of the movie with the specified IMDb-ID to `STDOUT` and exits with exit code 0. If something went wrong - e.g. the IMDb-ID doesn't exist or there is no movie available for it - an error is printed to `STDERR` and the exit code is > 0. 
+By default the tool just prints the HLS master URL of the movie with the specified IMDb-ID to `STDOUT` and exits with exit code 0. If something went wrong - e.g. the IMDb-ID doesn't exist or there is no video available for it - an error is printed to `STDERR` and the exit code is > 0.
 
 If you append the optional argument `--play`, vidfind instead plays the found video in a window.
+
+If the first argument does not start with "tt", it's instead interpreted as movie title/search string, and the first matching result in the IMDb database, if any, is used. Since movie titles are usually not unique, it's preferrable to specify an IMDb-ID. However, you can increase the chance that the first result is the correct one by appending the movie's year of release to the search string.
 
 If you don't know the IMDb-ID of a movie yet, you can use `--query "..."` to search for movies at IMDb by title. vidfind will print a list of the found results and exit.
 
 ### Examples
 
-#### Find a movie and print its streaming URL: 
-```cmd
+#### Find a movie with specified IMDb-ID and print its streaming URL: 
+```
 vidfind tt0083658
 ```
 
+#### Find a movie with specified title (and optionally year) and print its streaming URL: 
+```
+vidfind "blade runner 1982"
+```
+
 #### Find a movie and play it directly with [VLC media player](https://www.videolan.org/):
-```cmd
+```
 vidfind tt0083658 | "C:\Program Files\VideoLAN\VLC\vlc.exe" -
 ```
 
@@ -43,13 +51,13 @@ for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "C:\Program Files\MPC-
 
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
 *As far as I can tell this the only way to automatically play the found streaming URL in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)), but this will only work if you previously associated .m3u files with it in the system settings.*
-```cmd
+```
 vidfind tt0083658 > "%TMP%\tmp.m3u" && explorer "%TMP%\tmp.m3u"
 ```
 
 #### Play a movie directly with vidfind:
 ```
-vidfind tt0083658 --play
+vidfind "blade runner 1982" --play
 ```
 
 Result:

@@ -92,12 +92,36 @@ SETTINGS.BROWSER_EXTENSIONS_ENABLED = True
 if IS_FROZEN:
     SETTINGS.USER_DATA_FOLDER = os.path.join(APP_DIR, '..', 'profile')
 
+ERROR_WRONG_INPUT = 1
+ERROR_SERVER_NOT_REACHED = 2
+ERROR_MOVIE_NOT_FOUND = 3
+ERROR_VIDEO_NOT_FOUND = 4
+ERROR_UNKNOWN_ERROR = 5
+
 ########################################
 #
 ########################################
 def usage():
-    print(f'\nUsage:\n\n{APP_NAME} imdb-id [--play]\n{APP_NAME} --query "some movie title"', file=sys.stderr)
-    sys.exit(1)
+    print(
+        (
+            '\nUsage:\n\n'
+            f'{APP_NAME} imdb-id [--play]\n'
+            f'{APP_NAME} "some movie title" [--play]\n'
+            f'{APP_NAME} --query "some movie title"'
+        ),
+        file=sys.stderr
+    )
+    sys.exit(ERROR_WRONG_INPUT)
+
+
+class ctx:
+    imdb_id = None
+    is_query = False
+    is_query_and_load = False
+    is_play = False
+    query_str = None
+    fullscreen = False
+    exit_code = 0
 
 ########################################
 #
@@ -106,20 +130,20 @@ def main():
     if len(sys.argv) < 2:
         usage()
 
-    play = False
-    is_query = False
-
     if sys.argv[1] == '--query':
         if len(sys.argv) < 3:
             usage()
-        is_query = True
-        query = sys.argv[2]
+        ctx.is_query = True
+        ctx.query_str = sys.argv[2]
+
+    elif sys.argv[1].startswith('tt'):
+        ctx.imdb_id = sys.argv[1]
+        ctx.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
+
     else:
-        imdb_id = sys.argv[1]
-        if not sys.argv[1].startswith('tt'):
-            print(f"Error: imdb-id invalid. A valid id starts with 'tt' followed by digits.", file=sys.stderr)
-            sys.exit(2)
-        play = len(sys.argv) > 2 and sys.argv[2] == '--play'
+        ctx.is_query_and_load = True
+        ctx.query_str = sys.argv[1]
+        ctx.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
 
     ########################################
     #
@@ -135,7 +159,7 @@ def main():
         return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
     newclass = WNDCLASSEXW()
-    newclass.lpfnWndProc = WNDPROC(_window_proc_callback if play else user32.DefWindowProcW)
+    newclass.lpfnWndProc = WNDPROC(_window_proc_callback if ctx.is_play else user32.DefWindowProcW)
     newclass.lpszClassName = APP_NAME
     newclass.hbrBackground = gdi32.GetStockObject(BLACK_BRUSH)
     newclass.hCursor = user32.LoadCursorW(None, IDC_ARROW)
@@ -153,11 +177,11 @@ def main():
     if DARK_MODE:
         windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, byref(c_int(1)), sizeof(c_int))
 
-    if is_query:
-        query = query.lower().replace(' ', '_')
-        url = 'https://v2.sg.media-imdb.com/suggestion/' + ('x' if query[0] == '%' else query[0]) + '/' + query + '.json'
+    if ctx.is_query or ctx.is_query_and_load:
+        q = ctx.query_str.lower().replace(' ', '_')
+        url = 'https://v2.sg.media-imdb.com/suggestion/' + ('x' if q[0] == '%' else q[0]) + '/' + q + '.json'
     else:
-        url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={imdb_id}'
+        url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={ctx.imdb_id}'
 
     webview = WebView2(parent_hwnd = hwnd, url = url)
 
@@ -178,26 +202,61 @@ def main():
         webview.disconnect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
 
         ########################################
-        #
+        # If not internet data is 'null'
         ########################################
         def on_json_data(err, data):
+
             data = json.loads(data)
 
-            if is_query:
-                for row in data['d']:
-                    try:
-                        if row['q'] == 'feature':
-                            print(f"{row['id']}\t\"{row['l']}\"\t{row['y']}")
-                    except:
-                        pass
+            if type(data) != dict:
+                print('Error: Server not reached.', file=sys.stderr)
+                ctx.exit_code = ERROR_SERVER_NOT_REACHED
                 webview.close()
                 user32.PostQuitMessage(0)
                 return
 
-            if err != 0 or int(data['status_code']) != 200:
-                print(f'Movie with ID {imdb_id} was not found.', file=sys.stderr)
+            if ctx.is_query:
+                if 'd' in data:
+                    for row in data['d']:
+                        try:
+                            if row['q'] == 'feature':
+                                print(f"{row['id']}\t\"{row['l']}\"\t{row['y']}")
+                        except:
+                            pass
+                else:
+                    print(f'Error: Unknown error.', file=sys.stderr)
+                    ctx.exit_code = ERROR_UNKNOWN_ERROR
                 webview.close()
-                user32.PostQuitMessage(3)
+                user32.PostQuitMessage(0)
+                return
+
+            elif ctx.is_query_and_load:
+                if 'd' in data:
+                    for row in data['d']:
+                        try:
+                            if row['q'] == 'feature':
+                                ctx.imdb_id = row['id']
+                                webview.connect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
+                                ctx.is_query_and_load = False
+                                webview.load_url(f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={ctx.imdb_id}')
+                                return
+                        except:
+                            pass
+
+                    print('Error: Movie not found.', file=sys.stderr)
+                    ctx.exit_code = ERROR_MOVIE_NOT_FOUND
+                else:
+                    print('Error: Unknown error.', file=sys.stderr)
+                    ctx.exit_code = ERROR_UNKNOWN_ERROR
+                webview.close()
+                user32.PostQuitMessage(0)
+                return
+
+            elif int(data['status_code']) != 200:
+                print('Error: Video not found.', file=sys.stderr)
+                ctx.exit_code = ERROR_VIDEO_NOT_FOUND
+                webview.close()
+                user32.PostQuitMessage(0)
                 return
 
             ########################################
@@ -208,7 +267,7 @@ def main():
                 args.put_Handled(1)
                 uri = args.get_Uri()
                 if '/master.m3u8' in uri:
-                    if play:
+                    if ctx.is_play:
                         user32.SetWindowTextW(hwnd, data['data']['title'])
                         user32.ShowWindow(hwnd, 1)
                         webview.set_visible(True)
@@ -234,10 +293,7 @@ def main():
                 sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
 
                 # Make the fullscreen button (and fullscreen by double-click) work
-                if play:
-                    class ctx:
-                        fullscreen = False
-
+                if ctx.is_play:
                     ########################################
                     #
                     ########################################
@@ -269,7 +325,7 @@ if (video)
             webview.execute_js(f'''
 document.body.style.overflow='hidden';
 document.body.style.background='black';
-document.body.innerHTML='<iframe src="https://{VIDSRC_HOST}/embed/{imdb_id}" style="width:100vw;height:100vh;border:none;"></iframe>';'''
+document.body.innerHTML='<iframe src="https://{VIDSRC_HOST}/embed/{ctx.imdb_id}" style="width:100vw;height:100vh;border:none;"></iframe>';'''
             )
 
         webview.execute_js('JSON.parse(document.body.textContent)', on_json_data)
@@ -277,9 +333,11 @@ document.body.innerHTML='<iframe src="https://{VIDSRC_HOST}/embed/{imdb_id}" sty
     webview.connect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
 
     msg = MSG()
-    while user32.GetMessageW(byref(msg), None, 0, 0):
+    while user32.GetMessageW(byref(msg), None, 0, 0) != 0:
         user32.TranslateMessage(byref(msg))
         user32.DispatchMessageW(byref(msg))
+
+    sys.exit(ctx.exit_code)
 
 if __name__ == '__main__':
     try:
