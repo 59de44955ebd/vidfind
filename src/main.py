@@ -98,124 +98,122 @@ ERROR_MOVIE_NOT_FOUND = 3
 ERROR_VIDEO_NOT_FOUND = 4
 ERROR_UNKNOWN_ERROR = 5
 
-########################################
-#
-########################################
-def usage():
-    print(
-        (
-            '\nUsage:\n\n'
-            f'{APP_NAME} imdb-id [--play]\n'
-            f'{APP_NAME} "some movie title" [--play]\n'
-            f'{APP_NAME} --query "some movie title"'
-        ),
-        file=sys.stderr
-    )
-    sys.exit(ERROR_WRONG_INPUT)
-
-
-class ctx:
-    imdb_id = None
-    is_query = False
-    is_query_and_load = False
-    is_play = False
-    query_str = None
-    fullscreen = False
-    exit_code = 0
 
 ########################################
 #
 ########################################
-def main():
-    if len(sys.argv) < 2:
-        usage()
-
-    if sys.argv[1] == '--query':
-        if len(sys.argv) < 3:
-            usage()
-        ctx.is_query = True
-        ctx.query_str = sys.argv[2]
-
-    elif sys.argv[1].startswith('tt'):
-        ctx.imdb_id = sys.argv[1]
-        ctx.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
-
-    else:
-        ctx.is_query_and_load = True
-        ctx.query_str = sys.argv[1]
-        ctx.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
+class Main():
 
     ########################################
     #
     ########################################
-    def _window_proc_callback(hwnd, msg, wparam, lparam):
-        if msg == WM_CLOSE:
-            user32.PostQuitMessage(0)
+    def __init__(self):
 
-        elif msg == WM_SIZE:
-            width, height = lparam & 0xFFFF, (lparam >> 16) & 0xFFFF
-            webview.put_bounds(RECT(0, 0, width, height))
+        self.imdb_id = None
+        self.is_query = False
+        self.is_query_and_load = False
+        self.is_play = False
+        self.query_str = None
+        self.fullscreen = False
+        self.exit_code = 0
 
-        return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
+        if sys.argv[1] == '--query':
+            self.is_query = True
+            self.query_str = sys.argv[2]
 
-    newclass = WNDCLASSEXW()
-    newclass.lpfnWndProc = WNDPROC(_window_proc_callback if ctx.is_play else user32.DefWindowProcW)
-    newclass.lpszClassName = APP_NAME
-    newclass.hbrBackground = gdi32.GetStockObject(BLACK_BRUSH)
-    newclass.hCursor = user32.LoadCursorW(None, IDC_ARROW)
-    newclass.hIcon = user32.LoadIconW(kernel32.GetModuleHandleW(None), LPCWSTR(1))
-    user32.RegisterClassExW(byref(newclass))
+        elif sys.argv[1].startswith('tt'):
+            self.imdb_id = sys.argv[1]
+            self.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
 
-    hwnd = user32.CreateWindowExW(
-        0,
-        APP_NAME,
-        APP_NAME,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        None, None, None, 0
-    )
-    if DARK_MODE:
-        windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, byref(c_int(1)), sizeof(c_int))
-
-    if ctx.is_query or ctx.is_query_and_load:
-        q = ctx.query_str.lower().replace(' ', '_')
-        url = 'https://v2.sg.media-imdb.com/suggestion/' + ('x' if q[0] == '%' else q[0]) + '/' + q + '.json'
-    else:
-        url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={ctx.imdb_id}'
-
-    webview = WebView2(parent_hwnd = hwnd, url = url)
-
-    ########################################
-    #
-    ########################################
-    def on_WEBVIEW_READY(*args):
-        # Install our tiny extension in the local profile
-        extension_folder = os.path.join(APP_DIR, 'sniffer')
-        webview.profile_add_browser_extension(extension_folder, lambda err, ex: None)
-
-    webview.connect(EVENT.WEBVIEW_READY, on_WEBVIEW_READY)
-
-    ########################################
-    #
-    ########################################
-    def on_json_loaded(sender):
-        webview.disconnect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
+        else:
+            self.is_query_and_load = True
+            self.query_str = sys.argv[1]
+            self.is_play = len(sys.argv) > 2 and sys.argv[2] == '--play'
 
         ########################################
-        # If not internet data is 'null'
+        #
         ########################################
+        def _window_proc_callback(hwnd, msg, wparam, lparam):
+            if msg == WM_CLOSE:
+                user32.PostQuitMessage(0)
+
+            elif msg == WM_SIZE:
+                width, height = lparam & 0xFFFF, (lparam >> 16) & 0xFFFF
+                self.webview.put_bounds(RECT(0, 0, width, height))
+
+            return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
+
+        newclass = WNDCLASSEXW()
+        newclass.lpfnWndProc = WNDPROC(_window_proc_callback if self.is_play else user32.DefWindowProcW)
+        newclass.lpszClassName = APP_NAME
+        newclass.hbrBackground = gdi32.GetStockObject(BLACK_BRUSH)
+        newclass.hCursor = user32.LoadCursorW(None, IDC_ARROW)
+        newclass.hIcon = user32.LoadIconW(kernel32.GetModuleHandleW(None), LPCWSTR(1))
+        user32.RegisterClassExW(byref(newclass))
+
+        self.hwnd = user32.CreateWindowExW(
+            0,
+            APP_NAME,
+            APP_NAME,
+            WS_OVERLAPPEDWINDOW,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            None, None, None, 0
+        )
+        if DARK_MODE:
+            windll.dwmapi.DwmSetWindowAttribute(self.hwnd, 20, byref(c_int(1)), sizeof(c_int))
+
+        if self.is_query or self.is_query_and_load:
+            q = self.query_str.lower().replace(' ', '_')
+            url = 'https://v2.sg.media-imdb.com/suggestion/' + ('x' if q[0] == '%' else q[0]) + '/' + q + '.json'
+        else:
+            url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={self.imdb_id}'
+
+        self.webview = WebView2(parent_hwnd = self.hwnd, url = url)
+
+        if not self.is_query:
+            ########################################
+            #
+            ########################################
+            def on_WEBVIEW_READY(*args):
+                # Install our tiny extension in the local profile
+                extension_folder = os.path.join(APP_DIR, 'sniffer')
+                self.webview.profile_add_browser_extension(extension_folder, lambda err, ex: None)
+
+            self.webview.connect(EVENT.WEBVIEW_READY, on_WEBVIEW_READY)
+
+        if self.is_query or self.is_query_and_load:
+            self.webview.connect(EVENT.DOM_CONTENT_LOADED, self.on_imdb_json_loaded)
+        else:
+            self.webview.connect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
+
+        msg = MSG()
+        while user32.GetMessageW(byref(msg), None, 0, 0) != 0:
+            user32.TranslateMessage(byref(msg))
+            user32.DispatchMessageW(byref(msg))
+        sys.exit(self.exit_code)
+
+    ########################################
+    #
+    ########################################
+    def exit(self, exit_code = 0):
+        self.exit_code = exit_code
+        self.webview.close()
+        user32.PostQuitMessage(0)
+
+    ########################################
+    #
+    ########################################
+    def on_imdb_json_loaded(self, sender):
+        self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_imdb_json_loaded)
+
         def on_json_data(err, data):
-
             data = json.loads(data)
 
             if type(data) != dict:
                 print('Error: Server not reached.', file=sys.stderr)
-                ctx.exit_code = ERROR_SERVER_NOT_REACHED
-                webview.close()
-                user32.PostQuitMessage(0)
-                return
+                self.exit(ERROR_SERVER_NOT_REACHED)
 
-            if ctx.is_query:
+            elif self.is_query:
                 if 'd' in data:
                     for row in data['d']:
                         try:
@@ -223,124 +221,127 @@ def main():
                                 print(f"{row['id']}\t\"{row['l']}\"\t{row['y']}")
                         except:
                             pass
+                    self.exit()
                 else:
                     print(f'Error: Unknown error.', file=sys.stderr)
-                    ctx.exit_code = ERROR_UNKNOWN_ERROR
-                webview.close()
-                user32.PostQuitMessage(0)
-                return
+                    self.exit(ERROR_UNKNOWN_ERROR)
 
-            elif ctx.is_query_and_load:
+            elif self.is_query_and_load:
                 if 'd' in data:
                     for row in data['d']:
                         try:
                             if row['q'] == 'feature':
-                                ctx.imdb_id = row['id']
-                                webview.connect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
-                                ctx.is_query_and_load = False
-                                webview.load_url(f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={ctx.imdb_id}')
+                                self.imdb_id = row['id']
+                                self.webview.connect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
+                                self.webview.load_url(f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={self.imdb_id}')
                                 return
                         except:
                             pass
 
                     print('Error: Movie not found.', file=sys.stderr)
-                    ctx.exit_code = ERROR_MOVIE_NOT_FOUND
+                    self.exit(ERROR_MOVIE_NOT_FOUND)
                 else:
                     print('Error: Unknown error.', file=sys.stderr)
-                    ctx.exit_code = ERROR_UNKNOWN_ERROR
-                webview.close()
-                user32.PostQuitMessage(0)
-                return
+                    self.exit(ERROR_UNKNOWN_ERROR)
+
+        self.webview.execute_js('JSON.parse(document.body.textContent)', on_json_data)
+
+    ########################################
+    #
+    ########################################
+    def on_vidsrc_json_loaded(self, sender):
+        self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
+
+        def on_json_data(err, data):
+            data = json.loads(data)
+
+            if type(data) != dict:
+                print('Error: Server not reached.', file=sys.stderr)
+                self.exit(ERROR_SERVER_NOT_REACHED)
 
             elif int(data['status_code']) != 200:
                 print('Error: Video not found.', file=sys.stderr)
-                ctx.exit_code = ERROR_VIDEO_NOT_FOUND
-                webview.close()
-                user32.PostQuitMessage(0)
-                return
+                self.exit(ERROR_VIDEO_NOT_FOUND)
 
-            ########################################
-            # Block all popup windows.
-            # We also use this to pass the found master.m3u8 URL from our extension to the application.
-            ########################################
-            def on_new_window_requested(webview, args):
-                args.put_Handled(1)
-                uri = args.get_Uri()
-                if '/master.m3u8' in uri:
-                    if ctx.is_play:
-                        user32.SetWindowTextW(hwnd, data['data']['title'])
-                        user32.ShowWindow(hwnd, 1)
-                        webview.set_visible(True)
-                    else:
-                        print(uri)
-                        webview.close()
-                        user32.PostQuitMessage(0)
+            else:
+               self.load_vidsrc(data['data']['title'])
 
-            webview.connect(EVENT.NEW_WINDOW_REQUESTED, on_new_window_requested)
+        self.webview.execute_js('JSON.parse(document.body.textContent)', on_json_data)
 
-            ########################################
-            #
-            ########################################
-            def on_frame_created(sender, frame):
-                frame.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
-                frame.connect(EVENT.FRAME_CREATED, on_frame_created)
+    ########################################
+    #
+    ########################################
+    def load_vidsrc(self, movie_title):
 
-            ########################################
-            #
-            ########################################
-            def on_frame_dom_content_loaded(sender):
-                # This button must be clicked, otherwise the actual video stream is not loaded.
-                sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
+        ########################################
+        # Block all popup windows.
+        # We also use this to pass the found master.m3u8 URL from our extension to the application.
+        ########################################
+        def on_new_window_requested(sender, args):
+            args.put_Handled(1)
+            uri = args.get_Uri()
+            if '/master.m3u8' in uri:
+                if self.is_play:
+                    user32.SetWindowTextW(self.hwnd, movie_title)
+                    user32.ShowWindow(self.hwnd, 1)
+                    self.webview.set_visible(True)
+                else:
+                    print(uri)
+                    self.exit()
 
-                # Make the fullscreen button (and fullscreen by double-click) work
-                if ctx.is_play:
-                    ########################################
-                    #
-                    ########################################
-                    def toggle_fullscreen():
-                        ctx.fullscreen = not ctx.fullscreen
-                        style = user32.GetWindowLongA(hwnd, GWL_STYLE)
-                        user32.SetWindowLongA(hwnd, GWL_STYLE, style & ~13565952 if ctx.fullscreen else style | 13565952)
-                        user32.ShowWindow(hwnd, SW_SHOWMAXIMIZED if ctx.fullscreen else SW_SHOWNORMAL)
+        self.webview.connect(EVENT.NEW_WINDOW_REQUESTED, on_new_window_requested)
 
-                    sender.expose('toggle_fullscreen', toggle_fullscreen)
+        ########################################
+        #
+        ########################################
+        def on_frame_dom_content_loaded(sender):
+            # This button must be clicked, otherwise the actual video stream is not loaded.
+            sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
 
-                    sender.execute_js(
+            # Make the fullscreen button (and fullscreen by double-click) work
+            if self.is_play:
+                ########################################
+                #
+                ########################################
+                def toggle_fullscreen():
+                    self.fullscreen = not self.fullscreen
+                    style = user32.GetWindowLongA(self.hwnd, GWL_STYLE)
+                    user32.SetWindowLongA(self.hwnd, GWL_STYLE, style & ~13565952 if self.fullscreen else style | 13565952)
+                    user32.ShowWindow(self.hwnd, SW_SHOWMAXIMIZED if self.fullscreen else SW_SHOWNORMAL)
+
+                sender.expose('toggle_fullscreen', toggle_fullscreen)
+
+                sender.execute_js(
 """const video = document.querySelector('video');
 if (video)
 {
-    document.addEventListener("dblclick", (e) => {
-        chrome.webview.api.toggle_fullscreen();
-    });
-    video.parentNode.requestFullscreen = () => {
-        chrome.webview.api.toggle_fullscreen();
-    }
+    document.addEventListener("dblclick", () => chrome.webview.api.toggle_fullscreen());
+    video.parentNode.requestFullscreen = () => chrome.webview.api.toggle_fullscreen();
 }"""
-                    )
+                )
 
-            webview.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
-            webview.connect(EVENT.FRAME_CREATED, on_frame_created)
+        ########################################
+        #
+        ########################################
+        def on_frame_created(sender, frame):
+            frame.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
+            frame.connect(EVENT.FRAME_CREATED, on_frame_created)
 
-            # Load the vidsrc iframe
-            webview.execute_js(f'''
-document.body.style.overflow='hidden';
-document.body.style.background='black';
-document.body.innerHTML='<iframe src="https://{VIDSRC_HOST}/embed/{ctx.imdb_id}" style="width:100vw;height:100vh;border:none;"></iframe>';'''
-            )
+        self.webview.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
+        self.webview.connect(EVENT.FRAME_CREATED, on_frame_created)
+        self.webview.load_url(f"https://{VIDSRC_HOST}/embed/{self.imdb_id}")
 
-        webview.execute_js('JSON.parse(document.body.textContent)', on_json_data)
-
-    webview.connect(EVENT.DOM_CONTENT_LOADED, on_json_loaded)
-
-    msg = MSG()
-    while user32.GetMessageW(byref(msg), None, 0, 0) != 0:
-        user32.TranslateMessage(byref(msg))
-        user32.DispatchMessageW(byref(msg))
-
-    sys.exit(ctx.exit_code)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception as e:
-        print(f'Error: {e}', file=sys.stderr)
+    if len(sys.argv) < 2 or (sys.argv[1] == '--query' and len(sys.argv) < 3):
+        print(
+            (
+                '\nUsage:\n\n'
+                f'{APP_NAME} imdb-id [--play]\n'
+                f'{APP_NAME} "some movie title" [--play]\n'
+                f'{APP_NAME} --query "some movie title"'
+            ),
+            file=sys.stderr
+        )
+        sys.exit(ERROR_WRONG_INPUT)
+    Main()
