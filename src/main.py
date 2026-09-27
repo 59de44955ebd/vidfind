@@ -292,13 +292,8 @@ class Main():
 
         self.webview.connect(EVENT.WEB_RESOURCE_REQUESTED, on_web_resource_requested)
 
-        ########################################
         # Block all popup windows.
-        ########################################
-        def on_new_window_requested(sender, args):
-            args.put_Handled(TRUE)
-
-        self.webview.connect(EVENT.NEW_WINDOW_REQUESTED, on_new_window_requested)
+        self.webview.connect(EVENT.NEW_WINDOW_REQUESTED, lambda sender, args: args.put_Handled(TRUE))
 
         ########################################
         #
