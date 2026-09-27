@@ -48,7 +48,6 @@ echo.
 echo ****************************************
 echo Copying resources...
 echo ****************************************
-xcopy /e "src\sniffer" "dist\%APP_NAME%\%DATA_DIR%\sniffer\" >nul
 copy "src\webview2\native\win-amd64\loader.dll" "dist\%APP_NAME%\%DATA_DIR%\"
 exit /B
 
