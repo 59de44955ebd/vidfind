@@ -4,6 +4,8 @@ vidfind is a command line tool for Windows 11 that allows to find and play onlin
 
 It is based on [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2) and the `vidsrc` API and written in Python.
 
+For Linux and macOS there is an [alternative version](vidfind-qt/) based on PyQt6 and QtWebEngine with basically the same interface, but without the `--play` argument, because QtWebEngine (unless self compiled) doesn't support .mp4 video with proprietary codecs like H.264.
+
 ## Usage
 
 ```
