@@ -170,18 +170,6 @@ class Main():
             url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={self.imdb_id}'
 
         self.webview = WebView2(parent_hwnd = self.hwnd, url = url, is_private = PRIVATE_MODE)
-
-        if not self.is_query:
-            ########################################
-            #
-            ########################################
-            def on_WEBVIEW_READY(*args):
-                # Install our tiny extension in the local profile
-                extension_folder = os.path.join(APP_DIR, 'sniffer')
-                self.webview.profile_add_browser_extension(extension_folder, lambda err, ex: None)
-
-            self.webview.connect(EVENT.WEBVIEW_READY, on_WEBVIEW_READY)
-
         if self.is_query or self.is_query_and_load:
             self.webview.connect(EVENT.DOM_CONTENT_LOADED, self.on_imdb_json_loaded)
         else:
@@ -275,30 +263,40 @@ class Main():
                 self.exit(ERROR_VIDEO_NOT_FOUND)
 
             else:
-               self.load_vidsrc(data['data']['title'])
+               self.load_video(data['data']['title'])
 
         self.webview.execute_js('JSON.parse(document.body.textContent)', on_json_data)
 
     ########################################
     #
     ########################################
-    def load_vidsrc(self, movie_title):
+    def load_video(self, movie_title):
+
+        self.webview._webview.AddWebResourceRequestedFilterWithRequestSourceKinds(
+            '*/master.m3u8*',
+            WEB_RESOURCE_CONTEXT.ALL,
+            WEB_RESOURCE_REQUEST_SOURCE_KINDS.ALL,
+        )
+
+        ########################################
+        #
+        ########################################
+        def on_web_resource_requested(sender, args):
+            if self.is_play:
+                user32.SetWindowTextW(self.hwnd, movie_title)
+                user32.ShowWindow(self.hwnd, 1)
+                self.webview.set_visible(True)
+            else:
+                print(args.url)
+                self.exit()
+
+        self.webview.connect(EVENT.WEB_RESOURCE_REQUESTED, on_web_resource_requested)
 
         ########################################
         # Block all popup windows.
-        # We also use this to pass the found master.m3u8 URL from our extension to the application.
         ########################################
         def on_new_window_requested(sender, args):
-            args.put_Handled(1)
-            uri = args.get_Uri()
-            if '/master.m3u8' in uri:
-                if self.is_play:
-                    user32.SetWindowTextW(self.hwnd, movie_title)
-                    user32.ShowWindow(self.hwnd, 1)
-                    self.webview.set_visible(True)
-                else:
-                    print(uri)
-                    self.exit()
+            args.put_Handled(TRUE)
 
         self.webview.connect(EVENT.NEW_WINDOW_REQUESTED, on_new_window_requested)
 

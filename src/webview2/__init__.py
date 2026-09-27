@@ -4,9 +4,6 @@ import sys
 from sysconfig import get_platform
 import time
 
-#from winapp.themes import *
-#from winapp.const import *
-#from winapp.dlls import *
 TRUE = 1
 FALSE = 0
 
@@ -202,6 +199,14 @@ class WEB_RESOURCE_CONTEXT:
     CSP_VIOLATION_REPORT = 15
     OTHER = 16
 
+# COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS
+class WEB_RESOURCE_REQUEST_SOURCE_KINDS:
+    NONE = 0
+    DOCUMENT = 0x1
+    SHARED_WORKER = 0x2
+    SERVICE_WORKER = 0x4
+    ALL = 0xffffffff
+
 class WebviewNotReadyException(Exception):
     pass
 
@@ -294,36 +299,6 @@ if (document && document.readyState === "complete")
 else
     window.addEventListener("DOMContentLoaded", () => _exit_drop_());
 """
-
-########################################
-# res = call_sync(self._active_webview.get_cookies)
-########################################
-def call_sync(func, **kwargs):
-    h_event = kernel32.CreateEventW(0, TRUE, FALSE, None)
-
-    class ctx():
-        result = None
-
-    def callback(*result, h_event=h_event):
-        ctx.result = result
-        kernel32.SetEvent(h_event)
-
-    try:
-        func(callback=callback, **kwargs)
-    except Exception as e:
-        print(e)
-        kernel32.CloseHandle(h_event)
-        return (-1, e)
-
-    hr = ole32.CoWaitForMultipleHandles(
-        COWAIT_DISPATCH_WINDOW_MESSAGES | COWAIT_DISPATCH_CALLS | COWAIT_INPUTAVAILABLE,
-        0xFFFFFFFF,
-        1,
-        (HANDLE * 1)(h_event),
-        byref(DWORD())
-    )
-    kernel32.CloseHandle(h_event)
-    return ctx.result
 
 
 ########################################
@@ -571,6 +546,7 @@ class Frame:
                 self._frame.PostWebMessageAsJson(json.dumps([id, res]))
         self.emit(EVENT.WEB_MESSAGE_RECEIVED, data)
 
+
 ########################################
 #
 ########################################
@@ -615,8 +591,6 @@ class WebView2:
         self._init_vhosts = []
         self._init_focus = False
         self._init_muted = False
-
-        self._current_request_filter = ('*', WEB_RESOURCE_CONTEXT.ALL)
 
         if WebView2.environment is None:
             LOADER.CreateEnvironmentWithOptions(
@@ -794,7 +768,6 @@ class WebView2:
             self._tokens[evt] = self._webview.add_WebMessageReceived(self._handlers[evt].interface())
 
         elif evt == EVENT.WEB_RESOURCE_REQUESTED:
-            self._webview.AddWebResourceRequestedFilter(*self._current_request_filter)
             self._handlers[evt] = WebResourceRequestedEventHandler(self._on_web_resource_requested)
             self._tokens[evt] = self._webview.add_WebResourceRequested(self._handlers[evt].interface())
 
@@ -898,15 +871,8 @@ class WebView2:
     def _on_webview_ready(self, sender, args):
         self._controller = args
 
-        webview = self._controller.get_CoreWebView2().QueryInterface(ICoreWebView2_28)  # ICoreWebView2_25
+        webview = self._controller.get_CoreWebView2().QueryInterface(ICoreWebView2_28)
         self._webview = webview
-
-#        if not WebView2.profile_initialized and SETTINGS.COLOR_SCHEME is not None:
-#            webview_profile = self._webview.get_Profile().QueryInterface(ICoreWebView2Profile7)
-#            webview_profile.put_PreferredColorScheme(SETTINGS.COLOR_SCHEME)
-#            WebView2.profile_initialized = True
-#
-#        self.hwnd = user32.FindWindowExW(self._parent_hwnd, None, 'Chrome_WidgetWin_0', None)
 
         if self._init_hidden:
             self._controller.put_IsVisible(0)
@@ -1168,6 +1134,22 @@ class WebView2:
             response_view.get_StatusCode(),
             headers
         ))
+
+    ########################################
+    #
+    ########################################
+    def add_web_resource_requested_filter_with_request_source_kinds(self, uri: str, context: int, kinds: int):
+        if self._webview is None:
+            raise WebviewNotReadyException()
+        self._webview.AddWebResourceRequestedFilterWithRequestSourceKinds(uri, context, kinds)
+
+    ########################################
+    #
+    ########################################
+    def remove_web_resource_requested_filter_with_request_source_kinds(self, uri: str, context: int, kinds: int):
+        if self._webview is None:
+            raise WebviewNotReadyException()
+        self._webview.RemoveWebResourceRequestedFilterWithRequestSourceKinds(uri, context, kinds)
 
     ########################################
     #
@@ -1632,26 +1614,13 @@ class WebView2:
     ########################################
     def set_visible(self, is_visible, suspend = False):
         if self._controller:
-
             self._controller.put_IsVisible(int(is_visible))
-
             if not is_visible and suspend:
                 self._webview.TrySuspend(None)
-
         else:
             self._init_hidden = not is_visible
             if not is_visible and suspend:
                 self._init_suspended = True
-
-    ########################################
-    #
-    ########################################
-    def set_web_resource_requested_filter(self, uri: str, context: int) -> None:
-        if EVENT.WEB_RESOURCE_REQUESTED in self._tokens:
-            self._webview.RemoveWebResourceRequestedFilter(*self._current_request_filter)
-        self._current_request_filter = (uri, context)
-        if EVENT.WEB_RESOURCE_REQUESTED in self._tokens:
-            self._webview.AddWebResourceRequestedFilter(*self._current_request_filter)
 
     ########################################
     #
@@ -1684,7 +1653,6 @@ class WebView2:
     def show_save_as_ui(self, callback = None):
         if self._webview is None:
             raise WebviewNotReadyException()
-
         self._webview.ShowSaveAsUI(
             ShowSaveAsUICompletedHandler(callback).interface() if callback else None
         )
