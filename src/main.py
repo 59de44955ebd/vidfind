@@ -54,7 +54,6 @@ user32.TranslateMessage.argtypes = (LPMSG,)
 ########################################
 # Used WinAPI constants
 ########################################
-#WS_OVERLAPPED = 0
 BLACK_BRUSH = 4
 CW_USEDEFAULT = -2147483648
 GWL_STYLE = -16
@@ -83,6 +82,7 @@ except:
 VIDSRC_HOST = APP_SETTINGS.get('VIDSRC_HOST', 'vidsrc.sh')
 USER_AGENT = APP_SETTINGS.get('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0')
 DARK_MODE = APP_SETTINGS.get('DARK_MODE', True)
+PRIVATE_MODE = APP_SETTINGS.get('PRIVATE_MODE', False)
 
 ########################################
 # WebView settings
@@ -143,8 +143,9 @@ class Main():
 
             return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
+        self.winproc = WNDPROC(_window_proc_callback if self.is_play else user32.DefWindowProcW)
         newclass = WNDCLASSEXW()
-        newclass.lpfnWndProc = WNDPROC(_window_proc_callback if self.is_play else user32.DefWindowProcW)
+        newclass.lpfnWndProc = self.winproc
         newclass.lpszClassName = APP_NAME
         newclass.hbrBackground = gdi32.GetStockObject(BLACK_BRUSH)
         newclass.hCursor = user32.LoadCursorW(None, IDC_ARROW)
@@ -168,7 +169,7 @@ class Main():
         else:
             url = f'https://data.{VIDSRC_HOST}/api.php?type=movie&imdb={self.imdb_id}'
 
-        self.webview = WebView2(parent_hwnd = self.hwnd, url = url)
+        self.webview = WebView2(parent_hwnd = self.hwnd, url = url, is_private = PRIVATE_MODE)
 
         if not self.is_query:
             ########################################
@@ -186,6 +187,10 @@ class Main():
         else:
             self.webview.connect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
 
+    ########################################
+    #
+    ########################################
+    def run(self):
         msg = MSG()
         while user32.GetMessageW(byref(msg), None, 0, 0) != 0:
             user32.TranslateMessage(byref(msg))
@@ -206,6 +211,9 @@ class Main():
     def on_imdb_json_loaded(self, sender):
         self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_imdb_json_loaded)
 
+        ########################################
+        #
+        ########################################
         def on_json_data(err, data):
             data = json.loads(data)
 
@@ -252,6 +260,9 @@ class Main():
     def on_vidsrc_json_loaded(self, sender):
         self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
 
+        ########################################
+        #
+        ########################################
         def on_json_data(err, data):
             data = json.loads(data)
 
@@ -298,8 +309,9 @@ class Main():
             # This button must be clicked, otherwise the actual video stream is not loaded.
             sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
 
-            # Make the fullscreen button (and fullscreen by double-click) work
             if self.is_play:
+                # Make fullscreen button and fullscreen by double-click work
+
                 ########################################
                 #
                 ########################################
@@ -344,4 +356,5 @@ if __name__ == '__main__':
             file=sys.stderr
         )
         sys.exit(ERROR_WRONG_INPUT)
-    Main()
+    app = Main()
+    app.run()
