@@ -272,7 +272,7 @@ class Main():
     ########################################
     def load_video(self, movie_title):
 
-        self.webview._webview.AddWebResourceRequestedFilterWithRequestSourceKinds(
+        self.webview.add_web_resource_requested_filter_with_request_source_kinds(
             '*/master.m3u8*',
             WEB_RESOURCE_CONTEXT.ALL,
             WEB_RESOURCE_REQUEST_SOURCE_KINDS.ALL,

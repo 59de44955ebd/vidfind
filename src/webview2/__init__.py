@@ -1136,7 +1136,7 @@ class WebView2:
         ))
 
     ########################################
-    #
+    # https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2_22?view=webview2-1.0.3967.48#addwebresourcerequestedfilterwithrequestsourcekinds
     ########################################
     def add_web_resource_requested_filter_with_request_source_kinds(self, uri: str, context: int, kinds: int):
         if self._webview is None:
