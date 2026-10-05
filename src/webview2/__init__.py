@@ -302,58 +302,6 @@ else
 
 
 ########################################
-# https://treyhunner.com/2019/04/why-you-shouldnt-inherit-from-list-and-dict-in-python/
-# But we only need to support __setitem__ and __delitem__, nothing else.
-########################################
-class Headers(dict):
-
-    def __init__(self, d={}):
-        super().__init__(**d)
-        self._edited = []
-        self._deleted = []
-
-    def __setitem__(self, key, value):
-        self._edited.append(key)
-        super().__setitem__(key, value)
-
-    def __delitem__(self, key):
-        self._deleted.append(key)
-        super().__delitem__(key)
-
-
-########################################
-#
-########################################
-class Request:
-    def __init__(self, url, method, headers):
-        self.url = url
-        self.method = method
-        self.headers = headers
-
-    def __str__(self) -> str:
-        return str(self.__dict__)
-
-    def __repr__(self) -> str:
-        return str(self.__dict__)
-
-
-########################################
-#
-########################################
-class Response:
-    def __init__(self, url, status, headers):
-        self.url = url
-        self.status = status
-        self.headers = headers
-
-    def __str__(self) -> str:
-        return str(self.__dict__)
-
-    def __repr__(self) -> str:
-        return str(self.__dict__)
-
-
-########################################
 #
 ########################################
 class Frame:
@@ -1033,18 +981,6 @@ class WebView2:
     ########################################
     #
     ########################################
-#    def _on_frame_navigation_completed(self, sender, args):
-#        self.emit(EVENT.FRAME_NAVIGATION_COMPLETED, args)
-
-    ########################################
-    #
-    ########################################
-#    def _on_frame_navigation_starting(self, sender, args):
-#        self.emit(EVENT.FRAME_NAVIGATION_STARTING, args)
-
-    ########################################
-    #
-    ########################################
     def _on_history_changed(self,  sender, args):
         self.emit(EVENT.HISTORY_CHANGED)
 
@@ -1085,55 +1021,16 @@ class WebView2:
         self.emit(EVENT.STATUS_BAR_TEXT_CHANGED)
 
     ########################################
-    #
+    # args: ICoreWebView2WebResourceRequestedEventArgs
     ########################################
     def _on_web_resource_requested(self, sender, args):
-        request = args.get_Request()
-        headers = request.get_Headers()
-
-        headers_dict = Headers()
-        it = headers.GetIterator()
-        while it.get_HasCurrentHeader():
-            k, v = it.GetCurrentHeader()
-            headers_dict[k] = v
-            it.MoveNext()
-
-        url = request.get_Uri()
-        method = request.get_Method()
-
-        request_obj = Request(url, method, Headers(headers_dict))
-
-        self.emit(EVENT.WEB_RESOURCE_REQUESTED, request_obj)
-
-        if request_obj.url != url:
-            request.put_Uri(request_obj.url)
-
-        if request_obj.method != method:
-            request.put_Method(request_obj.method)
-
-        for k in request_obj.headers._edited:
-            headers.SetHeader(k, request_obj.headers[k])
-
-        for k in request_obj.headers._deleted:
-            headers.RemoveHeader(k)
+        self.emit(EVENT.WEB_RESOURCE_REQUESTED, args.get_Request())
 
     ########################################
-    #
+    # args: ICoreWebView2WebResourceResponseReceivedEventArgs
     ########################################
     def _on_web_resource_response_received(self, sender, args):
-        response_view = args.get_Response()
-        headers = {}
-        it = response_view.get_Headers().GetIterator()
-        while it.get_HasCurrentHeader():
-            k, v = it.GetCurrentHeader()
-            headers[k] = v
-            it.MoveNext()
-
-        self.emit(EVENT.WEB_RESOURCE_RESPONSE_RECEIVED, Response(
-            args.get_Request().get_Uri(),
-            response_view.get_StatusCode(),
-            headers
-        ))
+        self.emit(EVENT.WEB_RESOURCE_RESPONSE_RECEIVED, args.get_Response())
 
     ########################################
     # https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2_22?view=webview2-1.0.3967.48#addwebresourcerequestedfilterwithrequestsourcekinds

@@ -1,8 +1,9 @@
 from ctypes import *
 from ctypes.wintypes import *
 
-from .comtypes import IUnknown, GUID, COMObject, COMMETHOD, HRESULT, IStream
+from .comtypes import IUnknown, GUID, COMObject, COMMETHOD, HRESULT  #, IStream
 from .comtypes.automation import VARIANT, IDispatch, VT_DISPATCH
+from .comtypes.istream import IStream
 
 INT64 = c_int64
 
@@ -49,7 +50,6 @@ ICoreWebView2ScriptDialogOpeningEventHandler = LPVOID
 ICoreWebView2TrySuspendCompletedHandler = LPVOID
 ICoreWebView2WindowFeatures = LPVOID
 ICoreWebView2ZoomFactorChangedEventHandler = LPVOID
-
 
 ICoreWebView2ProfileDeletedEventHandler = LPVOID
 ICoreWebView2ClientCertificateRequestedEventHandler = LPVOID

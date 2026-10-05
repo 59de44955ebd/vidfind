@@ -404,6 +404,14 @@ class WebResourceResponseReceivedEventHandler(COMObject, _Handler):
 
 ########################################
 #    COMMETHOD([], HRESULT, 'Invoke',
+#        ( ['in'], HRESULT, 'errorCode' ),
+#        ( ['in'], POINTER(IStream), 'result' )),
+########################################
+class WebResourceResponseViewGetContentCompletedHandler(COMObject, _Handler):
+    _com_interfaces_ = [ICoreWebView2WebResourceResponseViewGetContentCompletedHandler]
+
+########################################
+#    COMMETHOD([], HRESULT, 'Invoke',
 #        ( ['in'], POINTER(ICoreWebView2), 'sender' ),
 #        ( ['in'], POINTER(ICoreWebView2DevToolsProtocolEventReceivedEventArgs), 'args' )),
 ########################################

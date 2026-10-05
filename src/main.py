@@ -83,6 +83,7 @@ VIDSRC_HOST = APP_SETTINGS.get('VIDSRC_HOST', 'vidsrc.sh')
 USER_AGENT = APP_SETTINGS.get('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0')
 DARK_MODE = APP_SETTINGS.get('DARK_MODE', True)
 PRIVATE_MODE = APP_SETTINGS.get('PRIVATE_MODE', False)
+PLAY_BUTTON_SELECTOR = APP_SETTINGS.get('PLAY_BUTTON_SELECTOR', '#bigPlay')
 
 ########################################
 # WebView settings
@@ -160,8 +161,10 @@ class Main():
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
             None, None, None, 0
         )
-        if DARK_MODE:
-            windll.dwmapi.DwmSetWindowAttribute(self.hwnd, 20, byref(c_int(1)), sizeof(c_int))
+        if self.is_play and DARK_MODE:
+            dwmapi = windll.dwmapi
+            dwmapi.DwmSetWindowAttribute.argtypes = (HWND, DWORD, LPCVOID, DWORD)
+            dwmapi.DwmSetWindowAttribute(self.hwnd, 20, byref(c_int(1)), sizeof(c_int))
 
         if self.is_query or self.is_query_and_load:
             q = self.query_str.lower().replace(' ', '_')
@@ -281,13 +284,13 @@ class Main():
         ########################################
         #
         ########################################
-        def on_web_resource_requested(sender, args):
+        def on_web_resource_requested(sender, request):
             if self.is_play:
                 user32.SetWindowTextW(self.hwnd, movie_title)
                 user32.ShowWindow(self.hwnd, 1)
                 self.webview.set_visible(True)
             else:
-                print(args.url)
+                print(request.get_Uri())
                 self.exit()
 
         self.webview.connect(EVENT.WEB_RESOURCE_REQUESTED, on_web_resource_requested)
@@ -300,7 +303,7 @@ class Main():
         ########################################
         def on_frame_dom_content_loaded(sender):
             # This button must be clicked, otherwise the actual video stream is not loaded.
-            sender.execute_js("if (document.querySelector('#bigPlay')) document.querySelector('#bigPlay').click()")
+            sender.execute_js(f"if (document.querySelector('{PLAY_BUTTON_SELECTOR}')) document.querySelector('{PLAY_BUTTON_SELECTOR}').click()")
 
             if self.is_play:
                 # Make fullscreen button and fullscreen by double-click work
