@@ -289,6 +289,9 @@ class Main():
                 user32.SetWindowTextW(self.hwnd, movie_title)
                 user32.ShowWindow(self.hwnd, 1)
                 self.webview.set_visible(True)
+                # Prevent sleep mode when player is running
+                # ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 2147483651
+                kernel32.SetThreadExecutionState(2147483651)
             else:
                 print(request.get_Uri())
                 self.exit()
