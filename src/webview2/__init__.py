@@ -11,9 +11,9 @@ from .interfaces import *
 from .handlers import *
 
 if getattr(sys, 'frozen', False):
-    loader_dll = os.path.join(os.path.dirname(__file__), 'loader.dll')
+    loader_dll = os.path.join(os.path.dirname(__file__), 'webview2_loader.dll')
 else:
-    loader_dll = os.path.join(os.path.dirname(__file__), 'native', get_platform(), 'loader.dll')
+    loader_dll = os.path.join(os.path.dirname(__file__), 'native', get_platform(), 'webview2_loader.dll')
 
 LOADER = CDLL(loader_dll)
 LOADER.CreateEnvironmentWithOptions.argtypes = (LPCWSTR, LPCWSTR, LPCWSTR, LPCWSTR, BOOL, POINTER(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler))
@@ -447,43 +447,44 @@ class Frame:
         del self._handlers[evt]
 
     ########################################
+    # ICoreWebView2ContentLoadingEventArgs
     # Earliest moment when JS can be injected
     ########################################
     def _on_content_loading(self, sender, args):
         self.emit(EVENT.CONTENT_LOADING, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_document_title_changed(self, sender, args):
-        self.emit(EVENT.DOCUMENT_TITLE_CHANGED)
+        self.emit(EVENT.DOCUMENT_TITLE_CHANGED, args)
 
     ########################################
-    #
+    # ICoreWebView2DOMContentLoadedEventArgs
     ########################################
     def _on_dom_content_loaded(self, sender, args):
-        self.emit(EVENT.DOM_CONTENT_LOADED)
+        self.emit(EVENT.DOM_CONTENT_LOADED, args)
 
     ########################################
-    #
+    # ICoreWebView2NavigationCompletedEventArgs
     ########################################
     def _on_navigation_completed(self, sender, args):
         self.emit(EVENT.NAVIGATION_COMPLETED, args)
 
     ########################################
-    #
+    # ICoreWebView2NavigationStartingEventArgs
     ########################################
     def _on_navigation_starting(self, sender, args):
         self.emit(EVENT.NAVIGATION_STARTING, args)
 
     ########################################
-    #
+    # ICoreWebView2FrameCreatedEventArgs -> Frame(args.get_Frame().QueryInterface(ICoreWebView2Frame7))
     ########################################
     def _on_frame_created(self, sender, args):
-        self.emit(EVENT.FRAME_CREATED, Frame(args.get_Frame().QueryInterface(ICoreWebView2Frame7)))
+        self.emit(EVENT.FRAME_CREATED, args)
 
     ########################################
-    #
+    # ICoreWebView2WebMessageReceivedEventArgs2
     ########################################
     def _on_web_message_received(self, sender, args):
         data = json.loads(args.get_WebMessageAsJson())
@@ -894,7 +895,7 @@ class WebView2:
             self._webview.TrySuspend(None)
 
     ########################################
-    #
+    # ICoreWebView2WebMessageReceivedEventArgs2
     ########################################
     def _on_web_message_received(self, sender, args):
         data = json.loads(args.get_WebMessageAsJson())
@@ -913,52 +914,53 @@ class WebView2:
         self.emit(EVENT.WEB_MESSAGE_RECEIVED, data)
 
     ########################################
-    #
+    # ICoreWebView2AcceleratorKeyPressedEventArgs
     ########################################
     def _on_accelerator_key_pressed(self, sender, args):
         self.emit(EVENT.ACCELERATOR_KEY_PRESSED, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_contains_fullscreen_element_changed(self, sender, args):
         self.emit(EVENT.CONTAINS_FULLSCREEN_ELEMENT_CHANGED, args)
 
     ########################################
     # Earliest moment when JS can be injected
+    # ICoreWebView2ContentLoadingEventArgs
     ########################################
     def _on_content_loading(self, sender, args):
         self.emit(EVENT.CONTENT_LOADING, args)
 
     ########################################
-    #
+    # ICoreWebView2ContextMenuRequestedEventArgs
     ########################################
     def _on_context_menu_requested(self, sender, args):
         self.emit(EVENT.CONTEXT_MENU_REQUESTED, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_document_title_changed(self, sender, args):
-        self.emit(EVENT.DOCUMENT_TITLE_CHANGED)
+        self.emit(EVENT.DOCUMENT_TITLE_CHANGED, args)
 
     ########################################
-    #
+    # ICoreWebView2DOMContentLoadedEventArgs
     ########################################
     def _on_dom_content_loaded(self, sender, args):
-        self.emit(EVENT.DOM_CONTENT_LOADED)
+        self.emit(EVENT.DOM_CONTENT_LOADED, args)
 
     ########################################
-    # args: ICoreWebView2DownloadStartingEventArgs
+    # ICoreWebView2DownloadStartingEventArgs
     ########################################
     def _on_download_starting(self, sender, args):
         self.emit(EVENT.DOWNLOAD_STARTING, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_favicon_changed(self, sender, args):
-        self.emit(EVENT.FAVICON_CHANGED)
+        self.emit(EVENT.FAVICON_CHANGED, args)
 
     ########################################
     #
@@ -967,70 +969,70 @@ class WebView2:
         self.emit(EVENT.FILES_DROPPED, files, target_id)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_focus_lost(self, sender, args):
-        self.emit(EVENT.FOCUS_LOST)
+        self.emit(EVENT.FOCUS_LOST, args)
 
     ########################################
-    #
+    # ICoreWebView2FrameCreatedEventArgs -> Frame(args.get_Frame().QueryInterface(ICoreWebView2Frame7))
     ########################################
     def _on_frame_created(self, sender, args):
-        self.emit(EVENT.FRAME_CREATED, Frame(args.get_Frame().QueryInterface(ICoreWebView2Frame7)))
+        self.emit(EVENT.FRAME_CREATED, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_history_changed(self,  sender, args):
-        self.emit(EVENT.HISTORY_CHANGED)
+        self.emit(EVENT.HISTORY_CHANGED, args)
 
     ########################################
-    #
+    # ICoreWebView2NavigationCompletedEventArgs
     ########################################
     def _on_navigation_completed(self, sender, args):
         self.emit(EVENT.NAVIGATION_COMPLETED, args)
 
     ########################################
-    #
+    # ICoreWebView2NavigationStartingEventArgs
     ########################################
     def _on_navigation_starting(self, sender, args):
         self.emit(EVENT.NAVIGATION_STARTING, args)
 
     ########################################
-    #
+    # ICoreWebView2NewWindowRequestedEventArgs
     ########################################
     def _on_new_window_requested(self, sender, args):
         self.emit(EVENT.NEW_WINDOW_REQUESTED, args)
 
     ########################################
-    #
+    # ICoreWebView2PermissionRequestedEventArgs
     ########################################
     def _on_permission_requested(self, sender, args):
         self.emit(EVENT.PERMISSION_REQUESTED, args)
 
     ########################################
-    #
+    # ICoreWebView2SourceChangedEventArgs -> .get_IsNewDocument()
     ########################################
     def _on_source_changed(self, sender, args):
-        self.emit(EVENT.SOURCE_CHANGED, args.get_IsNewDocument())
+        self.emit(EVENT.SOURCE_CHANGED, args)
 
     ########################################
-    #
+    # IUnknown
     ########################################
     def _on_status_bar_text_changed(self, sender, args):
-        self.emit(EVENT.STATUS_BAR_TEXT_CHANGED)
+        self.emit(EVENT.STATUS_BAR_TEXT_CHANGED, args)
 
     ########################################
-    # args: ICoreWebView2WebResourceRequestedEventArgs
+    # ICoreWebView2WebResourceRequestedEventArgs
     ########################################
     def _on_web_resource_requested(self, sender, args):
-        self.emit(EVENT.WEB_RESOURCE_REQUESTED, args.get_Request())
+        self.emit(EVENT.WEB_RESOURCE_REQUESTED, args)
 
     ########################################
-    # args: ICoreWebView2WebResourceResponseReceivedEventArgs
+    # ICoreWebView2WebResourceResponseReceivedEventArgs
     ########################################
     def _on_web_resource_response_received(self, sender, args):
-        self.emit(EVENT.WEB_RESOURCE_RESPONSE_RECEIVED, args.get_Response())
+        self.emit(EVENT.WEB_RESOURCE_RESPONSE_RECEIVED, args)
 
     ########################################
     # https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2_22?view=webview2-1.0.3967.48#addwebresourcerequestedfilterwithrequestsourcekinds

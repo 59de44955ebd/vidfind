@@ -199,7 +199,7 @@ class Main():
     ########################################
     #
     ########################################
-    def on_imdb_json_loaded(self, sender):
+    def on_imdb_json_loaded(self, sender, args):
         self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_imdb_json_loaded)
 
         ########################################
@@ -248,7 +248,7 @@ class Main():
     ########################################
     #
     ########################################
-    def on_vidsrc_json_loaded(self, sender):
+    def on_vidsrc_json_loaded(self, sender, args):
         self.webview.disconnect(EVENT.DOM_CONTENT_LOADED, self.on_vidsrc_json_loaded)
 
         ########################################
@@ -284,7 +284,7 @@ class Main():
         ########################################
         #
         ########################################
-        def on_web_resource_requested(sender, request):
+        def on_web_resource_requested(sender, args):
             if self.is_play:
                 user32.SetWindowTextW(self.hwnd, movie_title)
                 user32.ShowWindow(self.hwnd, 1)
@@ -293,6 +293,7 @@ class Main():
                 # ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 2147483651
                 kernel32.SetThreadExecutionState(2147483651)
             else:
+                request = args.get_Request()
                 print(request.get_Uri())
                 self.exit()
 
@@ -304,7 +305,7 @@ class Main():
         ########################################
         #
         ########################################
-        def on_frame_dom_content_loaded(sender):
+        def on_frame_dom_content_loaded(sender, args):
             # This button must be clicked, otherwise the actual video stream is not loaded.
             sender.execute_js(f"if (document.querySelector('{PLAY_BUTTON_SELECTOR}')) document.querySelector('{PLAY_BUTTON_SELECTOR}').click()")
 
@@ -334,7 +335,8 @@ if (video)
         ########################################
         #
         ########################################
-        def on_frame_created(sender, frame):
+        def on_frame_created(sender, args):
+            frame = Frame(args.get_Frame().QueryInterface(ICoreWebView2Frame7))
             frame.connect(EVENT.DOM_CONTENT_LOADED, on_frame_dom_content_loaded)
             frame.connect(EVENT.FRAME_CREATED, on_frame_created)
 
