@@ -32,12 +32,12 @@ vidfind "blade runner 1982" --play
 Result:
 ![](screenshots/play.png)
 
-#### Find a movie with specified IMDb-ID and print its streaming URL: 
+#### Find a movie with specified IMDb-ID and print its (master) streaming URL: 
 ```
 vidfind tt0083658
 ```
 
-#### Find a movie with specified title (and optionally year) and print its streaming URL: 
+#### Find a movie with specified title (and optionally year) and print its (master) streaming URL: 
 ```
 vidfind "blade runner 1982"
 ```
@@ -53,10 +53,10 @@ vidfind tt0083658 | D:\_portable\mpv\mpv.exe --playlist=-
 ```
 
 #### Find a movie and play it directly with [MPC-HC](https://github.com/clsid2/mpc-hc):
-*This method also works for other media players that don't accept filenames/URLs passed directly from `STDIN`*
 ```
 for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "C:\Program Files\MPC-HC\mpc-hc64.exe" "%U%"
 ```
+*This method also works for other media players that don't accept filenames/URLs passed directly from `STDIN`*
 
 #### Find a movie and play it directly with [FFplay](https://www.ffmpeg.org/ffplay-all.html):
 ```
@@ -64,10 +64,16 @@ for /f %u in ('vidfind tt0083658') do @set "U=%u" && call ffplay -allowed_extens
 ```
 
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
-*As far as I can tell this the only way to automatically play the found streaming URL in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)), but this will only work if you previously associated .m3u files with it in the system settings.*
 ```
 vidfind tt0083658 > "%TMP%\tmp.m3u" && explorer "%TMP%\tmp.m3u"
 ```
+*As far as I can tell this the only way to automatically play the found streaming URL in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)), but this will only work if you previously associated .m3u files with it in the system settings.*
+
+#### Find a movie, use [yt-dlp](https://github.com/yt-dlp/yt-dlp) to extract the program stream with best quality and print its streaming URL:
+```
+vidfind tt0083658 | yt-dlp -f best --get-url -a - 2>nul
+```
+*I think most media players do, but for a player that doesn't automatically pick the best quality from a master.m3u8, you could pipe the output of yt-dlp to the player e.g. by appending `` | "path\to\player.exe" -``.*
 
 #### Find a movie and download it with [yt-dlp](https://github.com/yt-dlp/yt-dlp) as .mp4 file:
 ```
