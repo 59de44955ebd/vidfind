@@ -318,6 +318,8 @@ class Main():
                 def toggle_fullscreen():
                     self.fullscreen = not self.fullscreen
                     style = user32.GetWindowLongA(self.hwnd, GWL_STYLE)
+                    # Toggle window decoration
+                    # WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX = 13565952
                     user32.SetWindowLongA(self.hwnd, GWL_STYLE, style & ~13565952 if self.fullscreen else style | 13565952)
                     user32.ShowWindow(self.hwnd, SW_SHOWMAXIMIZED if self.fullscreen else SW_SHOWNORMAL)
 

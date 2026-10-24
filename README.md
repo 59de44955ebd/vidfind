@@ -58,6 +58,11 @@ vidfind tt0083658 | D:\_portable\mpv\mpv.exe --playlist=-
 for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "C:\Program Files\MPC-HC\mpc-hc64.exe" "%U%"
 ```
 
+#### Find a movie and play it directly with [FFplay](https://www.ffmpeg.org/ffplay-all.html):
+```
+for /f %u in ('vidfind tt0083658') do @set "U=%u" && call ffplay -allowed_extensions ALL -extension_picky disabled "%U%" -vst v:2
+```
+
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
 *As far as I can tell this the only way to automatically play the found streaming URL in [Windows Media Player (UWP)](https://en.wikipedia.org/wiki/Windows_Media_Player_(2022)), but this will only work if you previously associated .m3u files with it in the system settings.*
 ```
