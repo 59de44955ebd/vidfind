@@ -63,6 +63,12 @@ for /f %u in ('vidfind tt0083658') do @set "U=%u" && call "C:\Program Files\MPC-
 for /f %u in ('vidfind tt0083658') do @set "U=%u" && call ffplay -allowed_extensions ALL -extension_picky disabled "%U%" -vst v:2
 ```
 
+#### Find a movie and play it directly with [SMP](https://github.com/59de44955ebd/SMP):
+```
+vidfind tt0083658 | "%LOCALAPPDATA%\Programs\SMP\SMP.exe" -
+```
+*SMP is my own little multi-engine media player written in Python. (Adaptive) HLS streams are supported by engines directshow, mpv, vlc and webview.*
+
 #### Save found URL in a temporary .m3u playlist file, then open this file with the default player for .m3u files: 
 ```
 vidfind tt0083658 > "%TMP%\tmp.m3u" && explorer "%TMP%\tmp.m3u"
